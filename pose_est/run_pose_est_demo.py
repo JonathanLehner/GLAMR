@@ -20,8 +20,6 @@ def run_pose_est_on_video(video_file, output_dir, pose_est_model, image_dir=None
         image_folder = image_dir
     conda_path = os.environ["CONDA_PREFIX"].split('/envs')[0]
 
-    #print(image_folder)
-    #exit()
 
     if pose_est_model == 'hybrik':
         if bbox_file is None:

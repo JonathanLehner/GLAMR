@@ -80,12 +80,6 @@ for i, seq_name in enumerate(sequences[:]):
         else: # Jonathan: fixed directory
             seq_name = os.path.basename(seq_name).split(".")[0]
             seq_image_dir = f"{dataset_paths['image']}/{seq_name}"
-            #seq_image_dir = f"{seq_name}"
-
-        print(seq_image_dir)
-        print(seq_name)
-        print(os.path.exists(seq_image_dir))
-        #exit()
 
         seq_out_dir = f"{args.out_dir}/{seq_name}"
         seq_bbox_file = f"{dataset_paths['bbox']}/{seq_name}.pkl"
@@ -120,6 +114,7 @@ for i, seq_name in enumerate(sequences[:]):
         else:
             gt_dict = pickle.load(open(seq_gt_pose_file, 'rb'))
             in_dict = {'est': est_dict, 'gt': gt_dict['person_data'], 'gt_meta': gt_dict['meta'], 'seq_name': seq_name}
+            
         # global optimization
         out_dict = grecon_model.optimize(in_dict)
         pickle.dump(out_dict, open(out_file, 'wb'))

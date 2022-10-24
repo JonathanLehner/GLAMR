@@ -102,8 +102,6 @@ hybrik_model.eval()
 os.makedirs(os.path.join(opt.out_dir, 'res_images'), exist_ok=True)
 os.makedirs(os.path.join(opt.out_dir, 'res_2d_images'), exist_ok=True)
 
-#print(f'{opt.img_folder}')
-#exit()
 files = os.listdir(f'{opt.img_folder}')
 files.sort()
 
@@ -129,6 +127,7 @@ frame_idx = 0
 for fr, img_path in enumerate(tqdm(img_path_list)):
     dirname = os.path.dirname(img_path)
     basename = os.path.basename(img_path)
+    
     # Run Detection
     input_image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
     image_vis = input_image.copy()
