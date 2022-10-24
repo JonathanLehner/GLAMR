@@ -102,6 +102,8 @@ hybrik_model.eval()
 os.makedirs(os.path.join(opt.out_dir, 'res_images'), exist_ok=True)
 os.makedirs(os.path.join(opt.out_dir, 'res_2d_images'), exist_ok=True)
 
+#print(f'{opt.img_folder}')
+#exit()
 files = os.listdir(f'{opt.img_folder}')
 files.sort()
 

@@ -7,13 +7,14 @@ import argparse
 import numpy as np
 import torch
 from global_recon.utils.evaluator import Evaluator
-
+import glob
 
 test_sequences = {
     '3dpw': ['downtown_arguing_00', 'downtown_bar_00', 'downtown_bus_00', 'downtown_cafe_00', 'downtown_car_00', 'downtown_crossStreets_00', 'downtown_downstairs_00', 
              'downtown_enterShop_00', 'downtown_rampAndStairs_00', 'downtown_runForBus_00', 'downtown_runForBus_01', 'downtown_sitOnStairs_00', 'downtown_stairs_00',
              'downtown_upstairs_00', 'downtown_walkBridge_01', 'downtown_walkUphill_00', 'downtown_walking_00', 'downtown_warmWelcome_00', 'downtown_weeklyMarket_00',
-             'downtown_windowShopping_00', 'flat_guitar_01', 'flat_packBags_00', 'office_phoneCall_00', 'outdoors_fencing_01']
+             'downtown_windowShopping_00', 'flat_guitar_01', 'flat_packBags_00', 'office_phoneCall_00', 'outdoors_fencing_01'],
+    'h36m': list(sorted(glob.glob('datasets/H36M/processed_v1/pose/s_09*.pkl')) + sorted(glob.glob('datasets/H36M/processed_v1/pose/s_11*.pkl')))
 }
 
 parser = argparse.ArgumentParser()
@@ -38,8 +39,14 @@ torch.torch.set_grad_enabled(False)
 evaluator = Evaluator(results_dir, args.dataset, device=device, log_file=f'{results_dir}/log_eval.txt', compute_sample=multi_seeds)
 seed_evaluator = Evaluator(results_dir, args.dataset, device=device, log_file=f'{results_dir}/log_eval_seed.txt', compute_sample=multi_seeds)
 
-for sind, seq_name in enumerate(sequences[:2]):
+for sind, seq_name in enumerate(sequences[:]):
     metrics_dict_arr = []
+
+    if(args.dataset == "3dpw"):
+        pass
+    else: # Jonathan: fixed directory
+        seq_name = os.path.basename(seq_name).split(".")[0]
+
     evaluator.log.info(f'{sind}/{len(sequences)} evaluating global reconstruction for {seq_name}')
 
     for seed in seeds:
