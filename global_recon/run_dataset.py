@@ -8,7 +8,7 @@ import numpy as np
 import pickle
 import glob
 
-from lib.utils.logging import create_logger
+from lib.utils.log_utils import create_logger
 from global_recon.utils.config import Config
 from global_recon.models import model_dict
 from global_recon.vis.vis_grecon import GReconVisualizer
@@ -20,7 +20,8 @@ test_sequences = {
              'downtown_enterShop_00', 'downtown_rampAndStairs_00', 'downtown_runForBus_00', 'downtown_runForBus_01', 'downtown_sitOnStairs_00', 'downtown_stairs_00',
              'downtown_upstairs_00', 'downtown_walkBridge_01', 'downtown_walkUphill_00', 'downtown_walking_00', 'downtown_warmWelcome_00', 'downtown_weeklyMarket_00',
              'downtown_windowShopping_00', 'flat_guitar_01', 'flat_packBags_00', 'office_phoneCall_00', 'outdoors_fencing_01'],
-    'h36m': list(sorted(glob.glob('datasets/H36M/processed_v1/pose/s_09*.pkl')) + sorted(glob.glob('datasets/H36M/processed_v1/pose/s_11*.pkl')))
+    'h36m': list(sorted(glob.glob('datasets/H36M/processed_v1/pose/s_09*.pkl')) + sorted(glob.glob('datasets/H36M/processed_v1/pose/s_11*.pkl'))),
+    'h36m_dyn': list(sorted(glob.glob('datasets/H36M/processed_v1/pose/s_09*.pkl')) + sorted(glob.glob('datasets/H36M/processed_v1/pose/s_11*.pkl'))),
 }
 
 dataset_paths_dict = {
@@ -30,6 +31,11 @@ dataset_paths_dict = {
         'gt_pose': 'datasets/3DPW/processed_v1/pose'
     },
     'h36m': {
+        'image': 'datasets/H36M/images_25fps',
+        'bbox': 'datasets/H36M/processed_v1/bbox',
+        'gt_pose': 'datasets/H36M/processed_v1/pose'
+    },
+    'h36m_dyn': {
         'image': 'datasets/H36M/occluded_v2/images',
         'bbox': 'datasets/H36M/occluded_v2/bbox',
         'gt_pose': 'datasets/H36M/occluded_v2/pose'
@@ -67,6 +73,8 @@ grecon_model = model_dict[cfg.grecon_model_name](cfg, device, None)
 for i, seq_name in enumerate(sequences[7:]):
     for seed in seeds:
         print(f'{i}/{len(sequences)} seed {seed} processing {seq_name} for {args.dataset}..')
+        if(args.dataset == "h36m" or args.dataset == "h36m_dyn"):
+            seq_name = os.path.basename(seq_name).split(".")[0]
         seq_image_dir = f"{dataset_paths['image']}/{seq_name}"
         seq_out_dir = f"{args.out_dir}/{seq_name}"
         seq_bbox_file = f"{dataset_paths['bbox']}/{seq_name}.pkl"
@@ -82,6 +90,7 @@ for i, seq_name in enumerate(sequences[7:]):
         pose_est_dir = f'{seq_out_dir}/pose_est'
         log.info(f"running {cfg.grecon_model_specs['est_type']} pose estimation on {seq_image_dir}...")
         run_pose_est_on_video(None, pose_est_dir, cfg.grecon_model_specs['est_type'], image_dir=seq_image_dir, bbox_file=seq_bbox_file, cached_pose=cached, gpu_index=args.gpu)
+        print("J: run pose est finished")
         pose_est_model_name = {'hybrik': 'HybrIK'}[cfg.grecon_model_specs['est_type']]
 
         np.random.seed(seed)

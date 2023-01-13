@@ -2,6 +2,9 @@ import time
 import os
 import torch
 import numpy as np
+import pickle
+import smplx
+import open3d as o3d
 from scipy.interpolate import interp1d
 from lib.models.smpl import SMPL, SMPL_MODEL_DIR
 from lib.utils.geometry import perspective_projection
@@ -77,13 +80,18 @@ class GlobalReconOptimizer:
         num_fr = len(in_dict['est'][0]['bboxes_dict']['exist'])
         cam_pose = torch.eye(4).repeat((num_fr, 1, 1)).float().to(self.device)
         cam_pose_inv = inverse_transform(cam_pose)
-        
-        src_joint_info = get_joints_info("smpl")
+
         dst_joint_info = get_joints_info("body26fk")
         dst_dict = dict((v, k) for k, v in dst_joint_info.name.items())
-        smpl_to_body26fk = np.array([(dst_dict[v], k) for k, v in src_joint_info.name.items() if v in dst_dict.keys()])
-
         if self.est_type == 'hybrik':
+            src_joint_info = get_joints_info("smpl")
+            smpl_to_body26fk = np.array([(dst_dict[v], k) for k, v in src_joint_info.name.items() if v in dst_dict.keys()])
+        elif self.est_type == 'prohmr':
+            src_joint_info = get_joints_info("coco25")
+            coco25_to_body26fk = np.array([(dst_dict[v], k) for k, v in src_joint_info.name.items() if v in dst_dict.keys()])  #8:11 means body26 joint8 = coco25 joint11
+
+
+        if self.est_type == 'hybrik' or self.est_type == 'prohmr':
             for idx, pose_dict in in_dict['est'].items():
                 new_dict = dict()
                 new_dict['visible'] = visible = pose_dict['bboxes_dict']['exist'].copy()
@@ -99,18 +107,54 @@ class GlobalReconOptimizer:
                 new_dict['invis_frames'] = invis_frames = visible == 0
                 new_dict['frame2ind'] = {f: i for i, f in enumerate(new_dict['frames'])}
                 new_dict['scale'] = None
-                smpl_pose_wroot = quaternion_to_angle_axis(torch.tensor(pose_dict[f'smpl_pose_quat_wroot'], device=self.device)).cpu().numpy()
+
+            
+                if self.est_type == 'hybrik':
+                    smpl_pose_wroot = quaternion_to_angle_axis(torch.tensor(pose_dict[f'smpl_pose_quat_wroot'], device=self.device)).cpu().numpy()
+                else:
+                    smpl_pose_wroot = pose_dict['smpl_pose']  # [seq_len, 24, 3]
                 new_dict['smpl_pose'] = smpl_pose_wroot[:, 1:].reshape(-1, 69)
                 if idx in in_dict['gt']:
                     new_dict['smpl_pose_gt'] = in_dict['gt'][idx]['pose'][:, 3:]
                 new_dict['smpl_beta'] = pose_dict['smpl_beta']
                 new_dict['smpl_orient_cam'] = smpl_pose_wroot[:, 0]
                 new_dict['root_trans_cam'] = pose_dict['root_trans']
+                if self.est_type == 'prohmr':
+                    new_dict['root_trans_cam'][:, 0] = -new_dict['root_trans_cam'][:, 0]  # saved transl_x in prohmr = -transl_x in hybrik
 
-                smpl_joints2d = pose_dict['kp_2d'][:, :24]
-                kp_2d_with_score = np.zeros((sum(new_dict['vis_frames']), 26, 3))
-                smpl_joints2d = np.concatenate((smpl_joints2d, np.ones_like(smpl_joints2d[:, :, [0]])), axis=-1)
-                kp_2d_with_score[:, smpl_to_body26fk[:, 0]] = smpl_joints2d[:, smpl_to_body26fk[:, 1]]
+                # ########## visualize
+                # device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+                # smpl_neutral = smplx.create('/local/home/szhang/ProHMR-master/data/smpl', create_transl=False, batch_size=1).to(device)
+                # body_mesh_list = []
+                # for i in range(0, max_len, 30):
+                #     body_shape = torch.from_numpy(new_dict['smpl_beta'][i]).float().unsqueeze(0).to(device)
+                #     body_pose = torch.from_numpy(new_dict['smpl_pose'][i]).float().unsqueeze(0).to(device).reshape(1, 23, 3)
+                #     global_orient = torch.from_numpy(new_dict['smpl_orient_cam'][i]).float().unsqueeze(0).to(device).reshape(1, 1, 3)  # [1, 1, 3]
+                #     transl = torch.from_numpy(new_dict['root_trans_cam'][i]).float().unsqueeze(0).to(device).reshape(1, 3)
+                #     pred_output = smpl_neutral(betas=body_shape, body_pose=body_pose, global_orient=global_orient, transl=transl)
+                #     pred_vertices = pred_output.vertices.reshape(-1, 6890, 3)
+                #
+                #     body_pred = o3d.geometry.TriangleMesh()
+                #     body_pred.vertices = o3d.utility.Vector3dVector(pred_vertices.detach().cpu().numpy()[0])
+                #     body_pred.triangles = o3d.utility.Vector3iVector(smpl_neutral.faces)
+                #     body_pred.compute_vertex_normals()
+                #     body_mesh_list.append(body_pred)
+                # mesh_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
+                # o3d.visualization.draw_geometries([mesh_frame]+body_mesh_list)
+
+
+                if self.est_type == 'hybrik':
+                    smpl_joints2d = pose_dict['kp_2d'][:, :24]
+                    kp_2d_with_score = np.zeros((sum(new_dict['vis_frames']), 26, 3))
+                    smpl_joints2d = np.concatenate((smpl_joints2d, np.ones_like(smpl_joints2d[:, :, [0]])), axis=-1)   # [seq_len, 24, 3]
+                    kp_2d_with_score[:, smpl_to_body26fk[:, 0]] = smpl_joints2d[:, smpl_to_body26fk[:, 1]]
+                else:
+                    coco25_joints2d = pose_dict['kp_2d']  # [len, 25, 3]
+                    kp_2d_with_score = np.zeros((sum(new_dict['vis_frames']), 26, 3))
+                    kp_2d_with_score[:, coco25_to_body26fk[:, 0]] = coco25_joints2d[:, coco25_to_body26fk[:, 1]]
+                    kp_2d_with_score[:, :, -1][kp_2d_with_score[:, :, -1]<0.2]=0.0
+                    kp_2d_with_score[:, :, -1][kp_2d_with_score[:, :, -1] > 0.2] = 1.0
+
                 new_dict['kp_2d'] = kp_2d_with_score[:, :, :2]
                 new_dict['kp_2d_score'] = kp_2d_with_score[:, :, 2]
                 new_dict['kp_2d_aligned'] = new_dict['kp_2d'].copy()

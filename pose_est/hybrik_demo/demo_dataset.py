@@ -114,6 +114,8 @@ for file in tqdm(files):
         img_path_list.append(img_path)
 
 mot_bboxes = pickle.load(open(opt.bbox_file, 'rb'))
+print(opt.bbox_file)
+
 
 prev_box = None
 
@@ -132,6 +134,9 @@ for fr, img_path in enumerate(tqdm(img_path_list)):
     image_vis = input_image.copy()
     image_vis2d = input_image.copy()
 
+    #print(img_path)
+    #print("num frames", mot_bboxes[0]['num_frames'])
+    #exit()
     for idx, bbox_dict in mot_bboxes.items():
 
         if bbox_dict['exist'][fr] == 0:
@@ -204,6 +209,8 @@ for k, v in out_dict.items():
     new_dict[k] = dict()
     for ck, cv in v.items():
         new_dict[k][ck] = cv
+
+print(f'dumping to: {opt.out_dir}/pose.pkl')
 pickle.dump(new_dict, open(f'{opt.out_dir}/pose.pkl', 'wb'))  
 
 images_to_video(f'{opt.out_dir}/res_images', f'{opt.out_dir}/render.mp4', img_fmt='%06d.jpg')

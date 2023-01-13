@@ -42,6 +42,10 @@ def convert_3dpw(data_path, output_path, split='all', j2d_conf_thresh=0.3):
     for filename in tqdm(files):
         with open(filename, 'rb') as f:
             data = pickle.load(f, encoding='latin1')
+            #print(filename)
+            #print(data)
+            #print("checking campose_valid")
+            #exit()
             seq_name = os.path.basename(filename).split('.')[0]
             imgs_path = os.path.join(data_path, 'imageFiles', seq_name)
             height, width, _ = cv.imread(os.path.join(imgs_path, 'image_00000.jpg')).shape

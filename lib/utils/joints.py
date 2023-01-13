@@ -641,6 +641,77 @@ class SMPLJoints:
         self.name[self.right_foot] = "right_foot"
 
 
+class BodyJointsCOCO25:
+    def __init__(self):
+
+        # name
+        self.pose_type = "coco25"
+
+        # number of joints
+        self.count      = 25
+
+        # indexes of joints
+        self.nose = 0
+        self.neck = 1
+        self.right_shoulder = 2
+        self.right_elbow = 3
+        self.right_wrist = 4
+        self.left_shoulder = 5
+        self.left_elbow = 6
+        self.left_wrist = 7
+        self.pelvis = 8
+        self.right_hip = 9
+        self.right_knee = 10
+        self.right_ankle = 11
+        self.left_hip = 12
+        self.left_knee = 13
+        self.left_ankle = 14
+        self.right_eye = 15
+        self.left_eye = 16
+        self.right_ear = 17
+        self.left_ear = 18
+
+        self.left_big_toe = 19
+        self.right_big_toe = 22
+        self.left_small_toe = 20
+        self.right_small_toe = 23
+        self.left_heel = 21
+        self.right_heel = 24
+
+        self.root = self.pelvis # just use whatever
+
+        # Joint names
+        self.name = dict()
+        self.name[self.right_ankle]    = "right_ankle"
+        self.name[self.right_knee]     = "right_knee"
+        self.name[self.right_hip]      = "right_hip"
+        self.name[self.right_shoulder] = "right_shoulder"
+        self.name[self.right_elbow]    = "right_elbow"
+        self.name[self.right_wrist]    = "right_wrist"
+        self.name[self.left_ankle]     = "left_ankle"
+        self.name[self.left_knee]      = "left_knee"
+        self.name[self.left_hip]       = "left_hip"
+        self.name[self.left_shoulder]  = "left_shoulder"
+        self.name[self.left_elbow]     = "left_elbow"
+        self.name[self.left_wrist]     = "left_wrist"
+        self.name[self.nose]           = "nose"
+        self.name[self.right_eye]      = "right_eye"
+        self.name[self.right_ear]      = "right_ear"
+        self.name[self.left_eye] = "left_eye"
+        self.name[self.left_ear] = "left_ear"
+        self.name[self.neck] = "neck"
+
+        self.name[self.left_big_toe]      = "left_big_toe"
+        self.name[self.right_big_toe]      = "right_big_toe"
+        self.name[self.left_small_toe] = "left_small_toe"
+        self.name[self.right_small_toe] = "right_small_toe"
+        self.name[self.left_heel] = "left_heel"
+        self.name[self.right_heel] = "right_heel"
+        self.name[self.pelvis] = "pelvis"
+
+
+
+
 def get_joints_info(pose_type):
 
     if pose_type == "body26fk":
@@ -649,6 +720,8 @@ def get_joints_info(pose_type):
         return BodyJoints30()
     elif pose_type == "coco":
         return BodyJointsCOCO()
+    elif pose_type == "coco25":
+        return BodyJointsCOCO25()
     elif pose_type == "smpl":
         return SMPLJoints()
     else:

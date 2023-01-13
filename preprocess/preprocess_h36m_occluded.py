@@ -33,6 +33,8 @@ def create_occluded_scene(pose_path, bbox_path, img_path, save_path, seq_name, s
     pose_dict = scene_dict['person_data']
     bbox_dict = pickle.load(open(f'{bbox_path}/{seq_name}.pkl', 'rb'))
     img_folder = f'{img_path}/{seq_name}'
+    #print(img_folder)
+    #exit()
     img_files = sorted(glob.glob(f'{img_folder}/*.jpg'))
     img_save_folder = f'{save_path}/images/{seq_name}'
     os.makedirs(img_save_folder, exist_ok=True)
