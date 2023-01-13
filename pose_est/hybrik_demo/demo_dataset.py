@@ -129,6 +129,7 @@ frame_idx = 0
 for fr, img_path in enumerate(tqdm(img_path_list)):
     dirname = os.path.dirname(img_path)
     basename = os.path.basename(img_path)
+    
     # Run Detection
     input_image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
     image_vis = input_image.copy()
