@@ -83,6 +83,34 @@ def hstack_videos(video1_path, video2_path, out_path, crf=25, verbose=True, text
         os.remove(tmp_file)
 
 
+def hstack_3videos(video1_path, video2_path, video3_path, out_path, crf=25, verbose=True, text1=None, text2=None, text3=None, text_color='white', text_size=60):
+    if not (text1 is None or text2 is None):
+        write_text = True
+        tmp_file = f'{osp.splitext(out_path)[0]}_tmp.mp4'
+    else:
+        write_text = False
+
+    os.makedirs(osp.dirname(out_path), exist_ok=True)
+    cmd = [FFMPEG_PATH, '-y', '-i', video1_path, '-i', video2_path, '-i', video3_path, '-filter_complex', 'hstack=inputs=3,format=yuv420p', 
+           '-vcodec', 'libx264', '-crf', f'{crf}', tmp_file if write_text else out_path]
+    print(cmd)
+    if not verbose:
+        cmd += ['-hide_banner', '-loglevel', 'error']
+    subprocess.run(cmd)
+
+    if write_text:
+        font_file = font_files[platform.system()]
+        draw_str = f"drawtext=fontsize={text_size}:fontfile={font_file}:fontcolor={text_color}:text='{text1}':x=(w-text_w)/4:y=20,"\
+                   f"drawtext=fontsize={text_size}:fontfile={font_file}:fontcolor={text_color}:text='{text2}':x=2*(w-text_w)/4:y=20,"\
+                   f"drawtext=fontsize={text_size}:fontfile={font_file}:fontcolor={text_color}:text='{text3}':x=3*(w-text_w)/4:y=20" 
+        cmd = [FFMPEG_PATH, '-i', tmp_file, '-y', '-vf', draw_str, '-c:a', 'copy', out_path]
+        if not verbose:
+            cmd += ['-hide_banner', '-loglevel', 'error']
+        subprocess.run(cmd)
+        os.remove(tmp_file)
+
+
+
 def vstack_videos(video1_path, video2_path, out_path, crf=25, verbose=True, text1=None, text2=None, text_color='white', text_size=60):
     if not (text1 is None or text2 is None):
         write_text = True

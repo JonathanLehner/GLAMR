@@ -186,6 +186,8 @@ for fr, img_path in enumerate(tqdm(img_path_list)):
         out_dict[idx]['smpl_beta'].append(pose_output.pred_shape[0].cpu().numpy())
         out_dict[idx]['root_trans'].append(transl)
         out_dict[idx]['kp_2d'].append(pts.cpu().numpy())
+        print(out_dict[idx]['cam_K'])
+        exit()
         out_dict[idx]['cam_K'].append(K.astype(np.float32))
     
     frame_idx += 1

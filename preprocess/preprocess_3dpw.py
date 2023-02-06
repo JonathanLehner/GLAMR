@@ -23,6 +23,7 @@ def convert_3dpw(data_path, output_path, split='all', j2d_conf_thresh=0.3):
 
     # get a list of .pkl files in the directory
     seq_path = os.path.join(data_path, 'sequenceFiles', split)
+    print(seq_path)
     files = sorted(glob.glob(f'{seq_path}/*.pkl'))
     pose_type = 'body30'
     full_body_type = "body26fk"
@@ -38,6 +39,8 @@ def convert_3dpw(data_path, output_path, split='all', j2d_conf_thresh=0.3):
     dst_dict = dict((v, k) for k, v in dst_joint_info.name.items())
     coco_to_body26fk = np.array([(dst_dict[v], k) for k, v in src_joint_info.name.items() if v in dst_dict.keys()])
 
+    print(files)
+
     # go through all the .pkl Files
     for filename in tqdm(files):
         with open(filename, 'rb') as f:
@@ -48,7 +51,10 @@ def convert_3dpw(data_path, output_path, split='all', j2d_conf_thresh=0.3):
             #exit()
             seq_name = os.path.basename(filename).split('.')[0]
             imgs_path = os.path.join(data_path, 'imageFiles', seq_name)
-            height, width, _ = cv.imread(os.path.join(imgs_path, 'image_00000.jpg')).shape
+            image_path = os.path.join(imgs_path, 'image_00000.jpg')
+            print(image_path)
+            image = cv.imread(image_path)
+            height, width, _ = image.shape
             K = data['cam_intrinsics']
             cam_pose = data['cam_poses']
             num_people = len(data['poses'])
@@ -57,6 +63,16 @@ def convert_3dpw(data_path, output_path, split='all', j2d_conf_thresh=0.3):
 
             output_dict = defaultdict(dict)
             bbox_dict = defaultdict(dict)
+
+            print("camera intrinsics", K)
+            #exit()
+            #J: save intrinsics to file for droid slam
+            droid_path = "/home/jonathanlehner/FIFA/DROID-SLAM/calib"
+            seq_calib_file = os.path.join(droid_path, seq_name + ".txt")
+            print(seq_calib_file)
+
+            with open(seq_calib_file, 'w') as f:
+                f.write(f'{K[0, 0]} {K[1, 1]} {K[0, 2]} {K[1, 2]}')
 
             for p_id in range(num_people):
                 output_dict[p_id] = defaultdict(list)
@@ -202,6 +218,6 @@ if __name__ == '__main__':
     if args.video:
         make_seq_videos(args.data_path, args.output_path, f'{args.output_path}/videos')
     else:
-        convert_3dpw(args.data_path, args.output_path)
+        convert_3dpw(args.data_path, args.output_path, 'train') #train or test or all 
 
     print('done')

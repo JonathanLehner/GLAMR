@@ -22,8 +22,8 @@ from lib.utils.torch_utils import tensor_to
 parser = argparse.ArgumentParser()
 parser.add_argument('--cfg', default='motion_infiller_demo')
 parser.add_argument('--split', default='test')
-parser.add_argument('--vis_mode', default='smpl')
-parser.add_argument('--num_drop_fr', type=int, default=None)
+parser.add_argument('--vis_mode', default='all') # J: default is smpl
+parser.add_argument('--num_drop_fr', type=int, default=15)
 parser.add_argument('--num_seq', type=int, default=2)
 parser.add_argument('--num_motion_samp', type=int, default=3)
 parser.add_argument('--multi_step', action='store_true', default=True)
@@ -59,11 +59,12 @@ mfiller = model_dict[cfg.model_name].load_from_checkpoint(model_cp, cfg=cfg, str
 mfiller.to(device)
 mfiller.eval()
 
-visualizer = SMPLVisualizer(generator_func=None, distance=7, device=device, verbose=False,
+visualizer = SMPLVisualizer(generator_func=None, distance=17, device=device, verbose=False,
                             sample_visible_alltime=False, show_smpl=args.vis_mode in {'smpl', 'all'}, show_skeleton=args.vis_mode in {'jpos', 'all'})
 
 
 for i, batch in enumerate(test_dataloader):
+    
     if i >= args.num_seq:
         break
     if i < args.start_ind:
@@ -79,6 +80,11 @@ for i, batch in enumerate(test_dataloader):
     visualizer.save_animation_as_video(
         vid_name % 'gt', init_args={'smpl_seq': output, 'mode': 'gt'}, window_size=(1500, 1500), cleanup=True
     )
+
+    print(mfiller.has_recon)
+    print(mfiller.stochastic)
+
+    exit()
 
     if mfiller.has_recon:
         # save recon

@@ -292,6 +292,7 @@ class SMPL(_SMPL):
         root_scale: B, scale factor w.r.t root
         """
         kwargs['get_skin'] = True
+
         smpl_output = super(SMPL, self).forward(*args, **kwargs)
         if orig_joints:
             joints = smpl_output.joints[:, :24]

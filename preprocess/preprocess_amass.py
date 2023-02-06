@@ -11,7 +11,7 @@ from amass_utils import read_data
 from lib.models.smpl import SMPL, SMPL_MODEL_DIR
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_path', default='datasets/amass')
+parser.add_argument('--data_path', default='../amass')
 parser.add_argument('--output_path', default='datasets/amass_processed/v1_new')
 parser.add_argument('--video', action='store_true', default=False)
 args = parser.parse_args()

@@ -174,7 +174,7 @@ class Evaluator:
         self.align_freq = align_freq
         self.compute_sample = compute_sample
         self.log = create_logger(log_file, file_handle=log_file != 'nofile')
-        self.smpl = SMPL(SMPL_MODEL_DIR, pose_type='body26fk', create_transl=False).to(device)
+        self.smpl = SMPL(SMPL_MODEL_DIR, pose_type='body26fk', create_transl=False, batch_size=800).to(device)
         self.J_regressor = torch.from_numpy(np.load(JOINT_REGRESSOR_H36M)).float().to(device)
         self.metrics_func = {
             'PA-MPJPE': compute_PAMPJPE_all,
@@ -293,6 +293,12 @@ class Evaluator:
                 visible = pose_dict['visible_orig']
                 pose_dict['vis_frames'] = visible == 1
                 pose_dict['invis_frames'] = visible == 0
+
+                #print("J: checking estimation")
+                """print(pose_dict[f'smpl_orient{suffix}'].shape,
+                    pose_dict['smpl_pose'].shape,
+                    pose_dict['smpl_beta'].shape,
+                    pose_dict[f'root_trans{suffix}'].shape)"""
 
                 smpl_motion = self.smpl(
                     global_orient=pose_dict[f'smpl_orient{suffix}'],

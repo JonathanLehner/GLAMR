@@ -222,7 +222,8 @@ class SMPLVisualizer(Visualizer3D):
             self.skeleton_actors = [SkeletonActor(self.pl, self.smpl_joint_parents) for _ in range(self.num_actors)]
         
     def update_camera(self, interactive):
-        root_pos = self.smpl_joints[0, self.fr, 0].cpu().numpy()
+        #root_pos = self.smpl_joints[0, self.fr, 0].cpu().numpy()
+        root_pos = self.smpl_joints[0, 0, 0].cpu().numpy() # J: fixed camera
         roll = self.pl.camera.roll
         view_vec = np.asarray(self.pl.camera.position) - np.asarray(self.pl.camera.focal_point)
         new_focal = np.array([root_pos[0], root_pos[1], 0.8])
