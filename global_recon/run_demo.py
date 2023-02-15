@@ -109,7 +109,8 @@ if args.save_video:
     log.info(f'saving world animation for {seq_name}')
     visualizer = GReconVisualizer(out_dict, coord='world', verbose=False, show_camera=False,
                                   render_cam_pos=render_specs.get('cam_pos', None), render_cam_focus=render_specs.get('cam_focus', None))
-    visualizer.save_animation_as_video(video_world, window_size=render_specs.get('wsize', (int(1.5 * img_h), img_h)), cleanup=True, crf=5)
+    #J: gives not divisible by 2 error in H36M, visualizer.save_animation_as_video(video_world, window_size=render_specs.get('wsize', (int(1.5 * img_h), img_h)), cleanup=True, crf=5)
+    visualizer.save_animation_as_video(video_world, window_size=render_specs.get('wsize', (img_w, img_h)), cleanup=True, crf=5)
 
     log.info(f'saving cam animation for {seq_name}')
     visualizer = GReconVisualizer(out_dict, coord='cam_in_world', verbose=False, background_img_dir=frame_dir)

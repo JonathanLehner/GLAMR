@@ -9,10 +9,11 @@ import yaml
 from lib.utils.vis import video_to_images
 
 
-def run_pose_est_on_video(video_file, output_dir, pose_est_model, image_dir=None, bbox_file=None, cached_pose=True, gpu_index=0, multi=False):
+def run_pose_est_on_video(video_file, output_dir, pose_est_model, image_dir=None, bbox_file=None, cached_pose=True, gpu_index=0, multi=False, dataset_path=None):
     print("J: run_pose_est_on_video")
-    if cached_pose and osp.exists(f'{output_dir}/pose.pkl'):
-        return
+    #if cached_pose and osp.exists(f'{output_dir}/pose.pkl'):
+    #    return
+    print("not skipping")
 
     if image_dir is None:
         image_folder = osp.join(output_dir, 'frames')
@@ -29,7 +30,8 @@ def run_pose_est_on_video(video_file, output_dir, pose_est_model, image_dir=None
             #print(image_folder)
             #print(output_dir)
             #exit()
-            cmd = f'{conda_path}/envs/hybrik/bin/python ../pose_est/hybrik_demo/demo_dataset.py --img_folder {osp.abspath(image_folder)} --out_dir {osp.abspath(output_dir)} --bbox_file {osp.abspath(bbox_file)} --gpu {gpu_index}'
+            cmd = f'{conda_path}/envs/hybrik/bin/python ../pose_est/hybrik_demo/demo_dataset.py --img_folder {osp.abspath(image_folder)} --out_dir {osp.abspath(output_dir)} --bbox_file {osp.abspath(bbox_file)} --gpu {gpu_index} --dataset_path {dataset_path}'
+        print(cmd)
         subprocess.run(cmd.split(' '), cwd='./HybrIK')
 
 

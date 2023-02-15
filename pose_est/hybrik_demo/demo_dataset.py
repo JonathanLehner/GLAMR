@@ -64,6 +64,10 @@ parser.add_argument('--bbox_file',
                     help='Multi-object tracking (MOT) bbox file',
                     default='',
                     type=str)
+parser.add_argument('--dataset_path',
+                    help='Path to 3dpw gt file',
+                    default='',
+                    type=str)
 
 opt = parser.parse_args()
 
@@ -125,8 +129,13 @@ out_dict = defaultdict(lambda: defaultdict(list))
 idx = 0   # current not supporting multiple person in this demo
 
 frame_idx = 0
+    
+gt_dict = pickle.load(open(opt.dataset_path, 'rb'))
+print("gt camera intrinsics", gt_dict["meta"]["cam_K"])
 
 for fr, img_path in enumerate(tqdm(img_path_list)):
+    print("img_path", img_path)
+
     dirname = os.path.dirname(img_path)
     basename = os.path.basename(img_path)
     
@@ -153,7 +162,11 @@ for fr, img_path in enumerate(tqdm(img_path_list)):
 
         # Visualization
         img_size = (image_vis.shape[0], image_vis.shape[1])
-        focal = np.array([1000, 1000])
+
+        focal = np.array([gt_dict["meta"]["cam_K"][0,0], gt_dict["meta"]["cam_K"][1,1]])
+        #focal = np.array([1000, 1000])
+        print("[demo dataset] using gt focal length", focal)
+
         bbox_xywh = xyxy2xywh(bbox)
         princpt = [bbox_xywh[0], bbox_xywh[1]]
 
@@ -186,18 +199,21 @@ for fr, img_path in enumerate(tqdm(img_path_list)):
         out_dict[idx]['smpl_beta'].append(pose_output.pred_shape[0].cpu().numpy())
         out_dict[idx]['root_trans'].append(transl)
         out_dict[idx]['kp_2d'].append(pts.cpu().numpy())
-        print(out_dict[idx]['cam_K'])
-        exit()
+
+        #print("axcssdsd")
+        #print(out_dict[idx]['cam_K'])
         out_dict[idx]['cam_K'].append(K.astype(np.float32))
     
+    #print(opt.out_dir)
     frame_idx += 1
     image_vis = cv2.cvtColor(image_vis, cv2.COLOR_RGB2BGR)
     res_path = os.path.join(opt.out_dir, 'res_images', f'{frame_idx:06d}.jpg')
     cv2.imwrite(res_path, image_vis)
 
-    # image_vis2d = cv2.cvtColor(image_vis2d, cv2.COLOR_RGB2BGR)
-    # res_path = os.path.join(opt.out_dir, 'res_2d_images', f'{frame_idx:06d}.jpg')
-    # cv2.imwrite(res_path, image_vis2d)
+    image_vis2d = cv2.cvtColor(image_vis2d, cv2.COLOR_RGB2BGR)
+    res_path = os.path.join(opt.out_dir, 'res_2d_images', f'{frame_idx:06d}.jpg')
+    cv2.imwrite(res_path, image_vis2d)
+    print("2d rendering", res_path)
 
 
 for idx, pose_dict in out_dict.items():
@@ -214,6 +230,7 @@ for k, v in out_dict.items():
         new_dict[k][ck] = cv
 
 print(f'dumping to: {opt.out_dir}/pose.pkl')
+print(new_dict)
 pickle.dump(new_dict, open(f'{opt.out_dir}/pose.pkl', 'wb'))  
 
 images_to_video(f'{opt.out_dir}/res_images', f'{opt.out_dir}/render.mp4', img_fmt='%06d.jpg')

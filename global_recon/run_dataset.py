@@ -77,7 +77,6 @@ dataset_paths = dataset_paths_dict[args.dataset]
 # global recon model
 grecon_model = model_dict[cfg.grecon_model_name](cfg, device, None)
 
-
 for i, seq_name in enumerate(sequences[:]):
     for seed in seeds:
         print(f'{i}/{len(sequences)} seed {seed} processing {seq_name} for {args.dataset}..')
@@ -89,6 +88,13 @@ for i, seq_name in enumerate(sequences[:]):
         seq_out_dir = f"{args.out_dir}/{seq_name}"
         seq_bbox_file = f"{dataset_paths['bbox']}/{seq_name}.pkl"
         seq_gt_pose_file = f"{dataset_paths['gt_pose']}/{seq_name}.pkl"
+        if seq_gt_pose_file is None:
+            gt_dict = dict()
+        else:
+            gt_dict = pickle.load(open(seq_gt_pose_file, 'rb'))
+
+        # J: need absolute path for other script
+        seq_gt_pose_file = os.path.abspath(seq_gt_pose_file)
 
         cfg.save_yml_file(f'{seq_out_dir}/config.yml')
         grecon_model.log = log = create_logger(f'{cfg.cfg_dir}/log.txt')
@@ -100,7 +106,7 @@ for i, seq_name in enumerate(sequences[:]):
         pose_est_dir = f'{seq_out_dir}/pose_est'
         log.info(f"running {cfg.grecon_model_specs['est_type']} pose estimation on {seq_image_dir}...")
 
-        run_pose_est_on_video(None, pose_est_dir, cfg.grecon_model_specs['est_type'], image_dir=seq_image_dir, bbox_file=seq_bbox_file, cached_pose=cached, gpu_index=args.gpu)
+        run_pose_est_on_video(None, pose_est_dir, cfg.grecon_model_specs['est_type'], image_dir=seq_image_dir, bbox_file=seq_bbox_file, cached_pose=cached, gpu_index=args.gpu, dataset_path=seq_gt_pose_file)
         print("J: run pose est finished")
         pose_est_model_name = {'hybrik': 'HybrIK'}[cfg.grecon_model_specs['est_type']]
 
@@ -115,11 +121,8 @@ for i, seq_name in enumerate(sequences[:]):
         out_file = f'{grecon_path}/{seq_name}_seed{seed}.pkl'
 
         est_dict = pickle.load(open(pose_est_file, 'rb'))
-        if seq_gt_pose_file is None:
-            in_dict = {'est': est_dict, 'gt': dict(), 'gt_meta': dict(), 'seq_name': seq_name}
-        else:
-            gt_dict = pickle.load(open(seq_gt_pose_file, 'rb'))
-            in_dict = {'est': est_dict, 'gt': gt_dict['person_data'], 'gt_meta': gt_dict['meta'], 'seq_name': seq_name}
+        
+        in_dict = {'est': est_dict, 'gt': gt_dict['person_data'], 'gt_meta': gt_dict['meta'], 'seq_name': seq_name}
             
         # global optimization
         out_dict = grecon_model.optimize(in_dict)
