@@ -6,7 +6,7 @@ import pickle
 import argparse
 import numpy as np
 import torch
-from global_recon.utils.evaluator import Evaluator
+from global_recon.utils.evaluator_traj import Evaluator
 import glob
 from torch.utils.data import DataLoader
 from motion_infiller.data.amass_dataset import AMASSDataset
@@ -24,6 +24,7 @@ torch.torch.set_grad_enabled(False)
 
 models = ["MOJO", "GLAMR"]
 models = ["GLAMR"]
+models = ["MOJO"]
 
 test_dataset = AMASSDataset('../GLAMR/datasets/amass_processed/v1', 'test', None, training=False, seq_len=800, ntime_per_epoch=int(2e6))
 test_dataloader = DataLoader(test_dataset, batch_size=1, num_workers=0, pin_memory=True, worker_init_fn=worker_init_fn)
@@ -46,7 +47,7 @@ for model in models:
                 for key in results.keys():
                     results[key] = results[key].float().cuda()
         except Exception as e:
-            print(e)
+            # print(e)
             continue
 
         evaluator.log.info(f'{sind}/{len(test_dataloader)} evaluating trajectory prediction for {seq_name}')

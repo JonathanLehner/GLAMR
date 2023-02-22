@@ -11,6 +11,7 @@ from lib.utils.tools import AverageMeter, concat_lists, find_consecutive_runs
 from lib.models.smpl import H36M_TO_J15, SMPL, SMPL_MODEL_DIR, JOINT_REGRESSOR_H36M
 from traj_pred.utils.traj_utils import convert_traj_world2heading
 
+# Note: GLAMR uses best of 5 G-MPJPE and G-PVE
 
 def compute_MPJPE(data, mode='all', aligned=False):
     num_data = 0
