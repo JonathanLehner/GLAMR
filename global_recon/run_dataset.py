@@ -124,6 +124,9 @@ for i, seq_name in enumerate(sequences[:]):
         
         in_dict = {'est': est_dict, 'gt': gt_dict['person_data'], 'gt_meta': gt_dict['meta'], 'seq_name': seq_name}
             
+        #print("only generating data - skipping optimisation")
+        #continue
+
         # global optimization
         out_dict = grecon_model.optimize(in_dict)
         pickle.dump(out_dict, open(out_file, 'wb'))

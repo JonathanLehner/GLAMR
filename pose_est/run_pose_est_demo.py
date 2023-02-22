@@ -11,9 +11,9 @@ from lib.utils.vis import video_to_images
 
 def run_pose_est_on_video(video_file, output_dir, pose_est_model, image_dir=None, bbox_file=None, cached_pose=True, gpu_index=0, multi=False, dataset_path=None):
     print("J: run_pose_est_on_video")
-    #if cached_pose and osp.exists(f'{output_dir}/pose.pkl'):
-    #    return
-    print("not skipping")
+    if cached_pose and osp.exists(f'{output_dir}/pose.pkl'):
+        return
+    #print("not skipping")
 
     if image_dir is None:
         image_folder = osp.join(output_dir, 'frames')

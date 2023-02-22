@@ -130,8 +130,10 @@ idx = 0   # current not supporting multiple person in this demo
 
 frame_idx = 0
     
-gt_dict = pickle.load(open(opt.dataset_path, 'rb'))
-print("gt camera intrinsics", gt_dict["meta"]["cam_K"])
+usingGTfocal_length = True
+if(usingGTfocal_length):
+    gt_dict = pickle.load(open(opt.dataset_path, 'rb'))
+    print("gt camera intrinsics", gt_dict["meta"]["cam_K"])
 
 for fr, img_path in enumerate(tqdm(img_path_list)):
     print("img_path", img_path)
@@ -163,9 +165,11 @@ for fr, img_path in enumerate(tqdm(img_path_list)):
         # Visualization
         img_size = (image_vis.shape[0], image_vis.shape[1])
 
-        focal = np.array([gt_dict["meta"]["cam_K"][0,0], gt_dict["meta"]["cam_K"][1,1]])
-        #focal = np.array([1000, 1000])
-        print("[demo dataset] using gt focal length", focal)
+        if(usingGTfocal_length):
+            focal = np.array([gt_dict["meta"]["cam_K"][0,0], gt_dict["meta"]["cam_K"][1,1]])
+            print("[demo dataset] using gt focal length", focal)
+        else:
+            focal = np.array([1000, 1000])
 
         bbox_xywh = xyxy2xywh(bbox)
         princpt = [bbox_xywh[0], bbox_xywh[1]]
@@ -175,8 +179,16 @@ for fr, img_path in enumerate(tqdm(img_path_list)):
                                 princpt=princpt)
 
         transl = pose_output.transl.detach().cpu().numpy().squeeze()
+
+        # J: scale z-translation / depth by training patch height vs bb height
         transl[2] = transl[2] * 256 / bbox_xywh[2]
 
+        # J: this is all multiplication so order should not matter
+        if(usingGTfocal_length):
+        #    # J: need to adjust translation for different focal length
+            transl[2] *= focal[0] / 1000.0
+
+        # J: transform to full image from bounding box
         new_princpt = np.array([input_image.shape[1], input_image.shape[0]]) * 0.5
         transl[:2] += (np.array(princpt) - new_princpt) * transl[2] / np.array(focal) 
         princpt = new_princpt
