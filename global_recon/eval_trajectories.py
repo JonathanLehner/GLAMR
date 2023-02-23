@@ -13,7 +13,8 @@ from motion_infiller.data.amass_dataset import AMASSDataset
 from lib.utils.tools import worker_init_fn, find_last_version, get_checkpoint_path
 
 results_dir = './out/vis_traj_pred'
-seeds = range(1)
+
+seeds = range(5)
 multi_seeds = len(seeds) > 1
 
 if torch.cuda.is_available():
@@ -23,11 +24,11 @@ else:
 torch.torch.set_grad_enabled(False)
 
 models = ["MOJO", "GLAMR"]
-models = ["GLAMR"]
+#models = ["GLAMR"]
 models = ["MOJO"]
 
 test_dataset = AMASSDataset('../GLAMR/datasets/amass_processed/v1', 'test', None, training=False, seq_len=800, ntime_per_epoch=int(2e6))
-test_dataloader = DataLoader(test_dataset, batch_size=1, num_workers=0, pin_memory=True, worker_init_fn=worker_init_fn)
+test_dataloader = DataLoader(test_dataset, shuffle=False, batch_size=1, num_workers=0, pin_memory=True, worker_init_fn=worker_init_fn)
 
 for model in models:
 

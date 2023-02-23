@@ -356,7 +356,6 @@ class Evaluator:
         return self.acc_metrics_dict
 
     def metrics_from_multiple_seeds(self, metrics_dict_arr):
-        print("metrics_from_multiple_seeds")
         metrics_dict = defaultdict(dict)
         metrics_dict['seq_len'] = metrics_dict_arr[0]['seq_len']
         for metric in self.metrics_name:

@@ -13,6 +13,8 @@ from traj_pred.utils.traj_utils import convert_traj_world2heading
 
 # Note: GLAMR uses best of 5 G-MPJPE and G-PVE
 
+
+# J: might not be necessary to align
 def compute_MPJPE(data, mode='all', aligned=False):
     num_data = 0
     mpjpe = 0
@@ -20,12 +22,10 @@ def compute_MPJPE(data, mode='all', aligned=False):
     for idx, pose_dict in data['person_data'].items():
         jpos = pose_dict[key]
         gt_jpos = data['gt'][idx][key]
-        if mode == 'vis':
-            jpos = jpos[pose_dict['vis_frames']]
-            gt_jpos = gt_jpos[pose_dict['vis_frames']]
-        elif mode == 'invis':
-            jpos = jpos[pose_dict['invis_frames']]
-            gt_jpos = gt_jpos[pose_dict['invis_frames']]
+
+        if mode == 'pelvis':
+            jpos = jpos[:,0:1,:]
+            gt_jpos = gt_jpos[:,0:1,:]
 
         if gt_jpos.shape[0] == 0:
             continue
@@ -37,63 +37,6 @@ def compute_MPJPE(data, mode='all', aligned=False):
     mpjpe = mpjpe / num_data if num_data > 0 else torch.tensor(0)
     info = {'num_data': num_data}
     return mpjpe.item(), info
-
-
-def compute_PAMPJPE(data, mode='all'):
-    num_data = 0
-    pampjpe = 0
-    for idx, pose_dict in data['person_data'].items():
-        jpos = pose_dict['eval_joints_world']
-        jpos_pa = pose_dict['eval_joints_world_PA']
-        gt_jpos = data['gt'][idx]['eval_joints_world']
-        if mode == 'vis':
-            jpos = jpos[pose_dict['vis_frames']]
-            jpos_pa = jpos_pa[pose_dict['vis_frames']]
-            gt_jpos = gt_jpos[pose_dict['vis_frames']]
-        elif mode == 'invis':
-            jpos = jpos[pose_dict['invis_frames']]
-            jpos_pa = jpos_pa[pose_dict['invis_frames']]
-            gt_jpos = gt_jpos[pose_dict['invis_frames']]
-
-        if gt_jpos.shape[0] == 0:
-            continue
-
-        diff = jpos_pa - gt_jpos
-        dist = torch.norm(diff, dim=2)
-        pampjpe += dist.mean(dim=1).sum() * 1000
-        num_data += diff.shape[0]
-    pampjpe = pampjpe / num_data if num_data > 0 else torch.tensor(0)
-    info = {'num_data': num_data}
-    return pampjpe.item(), info
-
-
-def compute_PAMPJPE_seq(data, mode='all'):
-    num_data = 0
-    pampjpe = []
-    for idx, pose_dict in data['person_data'].items():
-        jpos = pose_dict['eval_joints_world']
-        jpos_pa = pose_dict['eval_joints_world_PA']
-        gt_jpos = data['gt'][idx]['eval_joints_world']
-        if mode == 'vis':
-            jpos = jpos[pose_dict['vis_frames']]
-            jpos_pa = jpos_pa[pose_dict['vis_frames']]
-            gt_jpos = gt_jpos[pose_dict['vis_frames']]
-        elif mode == 'invis':
-            jpos = jpos[pose_dict['invis_frames']]
-            jpos_pa = jpos_pa[pose_dict['invis_frames']]
-            gt_jpos = gt_jpos[pose_dict['invis_frames']]
-
-        if gt_jpos.shape[0] == 0:
-            pampjpe.append(torch.zeros((0,), device=gt_jpos.device))
-            continue
-
-        diff = jpos_pa - gt_jpos
-        dist = torch.norm(diff, dim=2)
-        pampjpe.append(dist.mean(dim=1) * 1000)
-        num_data += diff.shape[0]
-    pampjpe = torch.cat(pampjpe).cpu().numpy()
-    info = {'num_data': num_data}
-    return pampjpe, info
 
 
 def compute_MPVE(data, mode='all', aligned=False):
@@ -122,32 +65,13 @@ def compute_MPVE(data, mode='all', aligned=False):
     return mpve.item(), info
 
 
-def compute_PAMPJPE_all(data):
-    return compute_PAMPJPE(data, 'all')
-
-def compute_PAMPJPE_vis(data):
-    return compute_PAMPJPE(data, 'vis')
-
-def compute_PAMPJPE_invis(data):
-    return compute_PAMPJPE(data, 'invis')
-
-def compute_sample_PAMPJPE_all(data):
-    return compute_PAMPJPE_seq(data, 'all')
-
-def compute_sample_PAMPJPE_vis(data):
-    return compute_PAMPJPE_seq(data, 'vis')
-
-def compute_sample_PAMPJPE_invis(data):
-    return compute_PAMPJPE_seq(data, 'invis')
-
-def compute_mean_PAMPJPE_invis(data):
-    return compute_PAMPJPE_seq(data, 'invis')
-
 def compute_Global_MPJPE(data):
     return compute_MPJPE(data, 'all', aligned=True)
 
+
 def compute_Global_MPVE(data):
     return compute_MPVE(data, 'all', aligned=True)
+
 
 def compute_accel_error(data):
     num_data = 0
@@ -166,6 +90,39 @@ def compute_accel_error(data):
     return accel_err.item(), info
 
 
+def compute_Global_PE(data):
+    return compute_MPJPE(data, 'pelvis', aligned=True)
+
+
+def compute_pelvis_accel_error(data):
+    num_data = 0
+    accel_err = 0
+    for idx, pose_dict in data['person_data'].items():
+        jpos = pose_dict['eval_joints_world'][:,0:1,:]
+        gt_jpos = data['gt'][idx]['eval_joints_world'][:,0:1,:]
+        accel = jpos[:-2] - 2 * jpos[1:-1] + jpos[2:]
+        gt_accel = gt_jpos[:-2] - 2 * gt_jpos[1:-1] + gt_jpos[2:]
+        diff = accel - gt_accel
+        dist = torch.norm(diff, dim=2)
+        accel_err += dist.mean(dim=1).sum() * 1000
+        num_data += diff.shape[0]
+    accel_err /= num_data
+    info = {'num_data': num_data}
+    return accel_err.item(), info
+
+
+def compute_std(data):
+    num_data = 0
+    std_err = 0
+    for idx, pose_dict in data['person_data'].items():
+        jpos = pose_dict['eval_joints_world'][:,0:1,:]        
+        std_err = torch.std(jpos)
+        num_data += jpos.shape[0]
+    std_err /= num_data
+    info = {'num_data': num_data}
+    return std_err.item(), info
+
+
 class Evaluator:
 
     def __init__(self, algo='', dataset='', device=torch.device('cpu'), log_file='nofile', align_freq=250, compute_sample=True):
@@ -178,19 +135,13 @@ class Evaluator:
         self.smpl = SMPL(SMPL_MODEL_DIR, pose_type='body26fk', create_transl=False, batch_size=800).to(device)
         self.J_regressor = torch.from_numpy(np.load(JOINT_REGRESSOR_H36M)).float().to(device)
         self.metrics_func = {
-            'PA-MPJPE': compute_PAMPJPE_all,
-            'PA-MPJPE-vis': compute_PAMPJPE_vis,
-            'PA-MPJPE-invis': compute_PAMPJPE_invis,
             'G-MPJPE': compute_Global_MPJPE,
             'G-MPVE': compute_Global_MPVE,
-            'ACCEL': compute_accel_error
+            'ACCEL': compute_accel_error,
+            'G-pelvis': compute_Global_PE,
+            'ACCEL-pelvis': compute_pelvis_accel_error,
+            'STD': compute_std,
         }
-        self.sample_metrics_func = {
-            'sample_PA-MPJPE-invis': compute_sample_PAMPJPE_invis
-        }
-
-        if self.compute_sample:
-            self.metrics_func.update(self.sample_metrics_func)
 
         self.metrics_name = list(self.metrics_func.keys())
         self.seed_min_metrics = ['PA-MPJPE-invis']
@@ -356,6 +307,7 @@ class Evaluator:
             self.acc_metrics_dict['metrics'][metric].update(metrics_dict['metrics'][metric].avg, metrics_dict['metrics'][metric].count)
         return self.acc_metrics_dict
 
+
     def metrics_from_multiple_seeds(self, metrics_dict_arr):
         print("metrics_from_multiple_seeds")
         metrics_dict = defaultdict(dict)
@@ -381,13 +333,15 @@ class Evaluator:
                 else:
                     val = val_arr.mean()
                 metrics_dict['metrics'][metric] = AverageMeter(val, num_data)
+    
         return metrics_dict
     
+
     def print_metrics(self, metrics_dict=None, fmt='.3f', prefix='', print_accum=True):
         if metrics_dict is None:
             metrics_dict = self.acc_metrics_dict
         fmt_str = f"%s: %{fmt} (%{fmt})" if print_accum else f"%s: %{fmt}"
         str_stats = f'{prefix}{self.algo} --- ' + ' '.join([fmt_str % ((x, y.avg, y.val) if print_accum else (x, y.avg)) for x, y in metrics_dict['metrics'].items() if not isinstance(y.avg, np.ndarray)])
-        if 'sample_PA-MPJPE-invis' not in metrics_dict['metrics']:
-            str_stats += ' sample_PA-MPJPE-invis: None (need multiple seeds)'
+
+
         self.log.info(str_stats)
