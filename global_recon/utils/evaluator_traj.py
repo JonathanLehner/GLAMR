@@ -111,16 +111,6 @@ def compute_pelvis_accel_error(data):
     return accel_err.item(), info
 
 
-def compute_std(data):
-    num_data = 0
-    std_err = 0
-    for idx, pose_dict in data['person_data'].items():
-        jpos = pose_dict['eval_joints_world'][:,0:1,:]        
-        std_err = torch.std(jpos)
-        num_data += jpos.shape[0]
-    std_err /= num_data # J: not sure if necessary to divide by sequence length
-    info = {'num_data': num_data}
-    return std_err.item(), info
 
 
 class Evaluator:
@@ -140,12 +130,15 @@ class Evaluator:
             'ACCEL': compute_accel_error,
             'G-pelvis': compute_Global_PE,
             'ACCEL-pelvis': compute_pelvis_accel_error,
-            'STD': compute_std,
         }
 
         self.metrics_name = list(self.metrics_func.keys())
-        self.seed_min_metrics = ['PA-MPJPE-invis']
         self.reset()
+
+    def compute_std(self, data):
+        # print(data.shape) # torch.Size([5, 800, 75])
+        std_err = torch.std(data, dim=0).sum()
+        return std_err
 
     def reset(self):
         self.metrics_dict_collection = dict()
@@ -309,11 +302,13 @@ class Evaluator:
 
 
     def metrics_from_multiple_seeds(self, metrics_dict_arr):
-        print("metrics_from_multiple_seeds")
+
         metrics_dict = defaultdict(dict)
         metrics_dict['seq_len'] = metrics_dict_arr[0]['seq_len']
+
         for metric in self.metrics_name:
             if 'sample' in metric or 'mean' in metric:
+                # J: seems this does not apply to any of our metrics
                 val_arr = np.stack([x['metrics'][metric].avg for x in metrics_dict_arr])
                 num_data = metrics_dict_arr[0]['metrics'][metric].count
                 if num_data == 0:
@@ -326,14 +321,15 @@ class Evaluator:
                     val = val.mean()
                 metrics_dict['metrics'][metric] = AverageMeter(val, num_data)
             else:
+                # J: according to the paper it should be best-out-of-5
                 val_arr = np.array([x['metrics'][metric].avg for x in metrics_dict_arr])
                 num_data = metrics_dict_arr[0]['metrics'][metric].count
-                if metric in self.seed_min_metrics:
+                if metric in ['G-MPJPE', 'G-MPVE', 'ACCEL', 'G-pelvis', 'ACCEL-pelvis', 'STD']: # J: all metrics at the moment
                     val = val_arr.min()
                 else:
                     val = val_arr.mean()
                 metrics_dict['metrics'][metric] = AverageMeter(val, num_data)
-    
+                    
         return metrics_dict
     
 
@@ -341,7 +337,11 @@ class Evaluator:
         if metrics_dict is None:
             metrics_dict = self.acc_metrics_dict
         fmt_str = f"%s: %{fmt} (%{fmt})" if print_accum else f"%s: %{fmt}"
-        str_stats = f'{prefix}{self.algo} --- ' + ' '.join([fmt_str % ((x, y.avg, y.val) if print_accum else (x, y.avg)) for x, y in metrics_dict['metrics'].items() if not isinstance(y.avg, np.ndarray)])
+
+        str_stats = f'{prefix}{self.algo} --- ' 
+        for x, y in metrics_dict['metrics'].items():
+            if not isinstance(y.avg, np.ndarray):
+                str_stats += ' '.join([fmt_str % ((x, y.avg, y.val) if print_accum else (x, y.avg))  ]) + " "
 
 
         self.log.info(str_stats)

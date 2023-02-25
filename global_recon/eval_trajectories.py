@@ -11,6 +11,7 @@ import glob
 from torch.utils.data import DataLoader
 from motion_infiller.data.amass_dataset import AMASSDataset
 from lib.utils.tools import worker_init_fn, find_last_version, get_checkpoint_path
+from lib.utils.tools import AverageMeter, concat_lists, find_consecutive_runs
 
 results_dir = './out/vis_traj_pred'
 
@@ -24,13 +25,15 @@ else:
 torch.torch.set_grad_enabled(False)
 
 models = ["MOJO", "GLAMR"]
-#models = ["GLAMR"]
+models = ["GLAMR"]
 models = ["MOJO"]
 
 test_dataset = AMASSDataset('../GLAMR/datasets/amass_processed/v1', 'test', None, training=False, seq_len=800, ntime_per_epoch=int(2e6))
 test_dataloader = DataLoader(test_dataset, shuffle=False, batch_size=1, num_workers=0, pin_memory=True, worker_init_fn=worker_init_fn)
 
 for model in models:
+
+    print(f"evaluating {model}")
 
     evaluator = Evaluator(results_dir, 'amass', device=device, log_file=f'{results_dir}/log_traj_{model}.txt', compute_sample=multi_seeds)
     seed_evaluator = Evaluator(results_dir, 'amass', device=device, log_file=f'{results_dir}/log_traj_seed_{model}.txt', compute_sample=multi_seeds)
@@ -83,18 +86,25 @@ for model in models:
             continue
 
         for seed in seeds:
-            print("seed ", seed)
 
             batch['smpl_orient_world'] = results['infer_out_orient'][0, seed]
             batch['smpl_pose'] = results['infer_out_pose'][0, seed, :, 3:]
             batch['root_trans_world'] = results['infer_out_trans'][0, seed]
 
             data["person_data"] = {0: batch}
+
             metrics_dict = seed_evaluator.compute_sequence_metrics(data, seq_name, accumulate=False)
             metrics_dict_arr.append(metrics_dict)
 
+            print("seed ", seed, metrics_dict["metrics"])
+
         metrics_dict_allseeds = evaluator.metrics_from_multiple_seeds(metrics_dict_arr)
         evaluator.update_accumulated_metrics(metrics_dict_allseeds, seq_name)
+
+        full_data = torch.cat([results['infer_out_orient'][0, :],results['infer_out_pose'][0, :, :, 3:],results['infer_out_trans'][0, :]], dim=-1)
+
+        metrics_dict_allseeds["metrics"]["std"] = AverageMeter(seed_evaluator.compute_std(full_data))
+
         evaluator.print_metrics(metrics_dict_allseeds, prefix=f'{sind}/{len(test_dataloader)} --- All seeds {seq_name} --- ', print_accum=False)
 
     evaluator.print_metrics(prefix=f'Total ------- ', print_accum=True)

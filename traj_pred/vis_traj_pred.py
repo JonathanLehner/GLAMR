@@ -58,9 +58,12 @@ traj_predictor.eval()
 
 visualizer = SMPLVisualizer(generator_func=None, distance=17, device=device, sample_visible_alltime=True, show_smpl='all', verbose=False)
 
+print("modified version only works if MOJO-cap has previously been run")
 for i, batch in enumerate(test_dataloader):
     if i >= args.num_seq:
+        print("maximum number of samples reached")
         break
+
     # num_drop_fr = batch["num_drop_fr"][0]
     print(f'{i}/{args.num_seq} seq_name: {batch["seq_name"][0]}, fr_start: {batch["fr_start"][0]}')
     
@@ -73,7 +76,7 @@ for i, batch in enumerate(test_dataloader):
             mojoResults[key] = mojoResults[key].float().cuda()
 
     except Exception as e:
-        #print(e)
+        print(e)
         continue
 
     output = traj_predictor.inference(batch, sample_num=args.num_motion_samp, recon=True, multi_step=args.multi_step)

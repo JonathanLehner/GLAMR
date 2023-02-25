@@ -130,7 +130,7 @@ idx = 0   # current not supporting multiple person in this demo
 
 frame_idx = 0
     
-usingGTfocal_length = False
+usingGTfocal_length = True
 if(usingGTfocal_length):
     gt_dict = pickle.load(open(opt.dataset_path, 'rb'))
     print("gt camera intrinsics", gt_dict["meta"]["cam_K"])

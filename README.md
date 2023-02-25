@@ -1,4 +1,10 @@
 # GLAMR
+
+# J: modifications
+in pose_est/hybrik_demo/demo_dataset we set whether to use the gt focal length
+usingGTfocal_length = True
+
+
 <img src="docs/glamr_teaser.gif" width="100%">
 
 This repo contains the official PyTorch implementation of our paper:
