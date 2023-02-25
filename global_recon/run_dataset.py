@@ -12,8 +12,8 @@ from lib.utils.log_utils import create_logger
 from global_recon.utils.config import Config
 from global_recon.models import model_dict
 from global_recon.vis.vis_grecon import GReconVisualizer
+from global_recon.vis.vis_cfg import demo_seq_render_specs as seq_render_specs
 from pose_est.run_pose_est_demo import run_pose_est_on_video
-
 
 test_sequences = {
     '3dpw': ['downtown_arguing_00', 'downtown_bar_00', 'downtown_bus_00', 'downtown_cafe_00', 'downtown_car_00', 'downtown_crossStreets_00', 'downtown_downstairs_00', 
@@ -134,6 +134,9 @@ for i, seq_name in enumerate(sequences[:]):
 
         # save video
         if args.save_video:
+            pose_est_video = f'{seq_out_dir}/pose_est/render.mp4'
+            img_w, img_h = get_video_width_height(pose_est_video)
+
             render_specs = seq_render_specs.get(seq_name, seq_render_specs['default'])
             video_world = f'{render_path}/{seq_name}_seed{seed}_world.mp4'
             video_cam = f'{render_path}/{seq_name}_seed{seed}_cam.mp4'
@@ -150,6 +153,6 @@ for i, seq_name in enumerate(sequences[:]):
             visualizer.save_animation_as_video(video_cam, window_size=(img_w, img_h), cleanup=True)
 
             log.info(f'saving side-by-side animation for {seq_name}')
-            hstack_video_arr([pose_est_video, video_cam, video_world], video_sbs, text_arr=[pose_est_model_name, 'GLAMR (Cam)', 'GLAMR (World)'], text_color='blue', text_size=img_h // 16, verbose=False)
+            hstack_video_arr([pose_est_video, video_cam, video_world], video_sbs, text_arr=["Hybrik", 'GLAMR (Cam)', 'GLAMR (World)'], text_color='blue', text_size=img_h // 16, verbose=False)
 
 
