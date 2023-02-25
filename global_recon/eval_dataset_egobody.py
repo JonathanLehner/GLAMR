@@ -19,7 +19,7 @@ from global_recon.utils.evaluator_egobody import EvaluatorEgobody
 
 parser = argparse.ArgumentParser()
 # parser.add_argument('--dataset', default='3dpw')
-parser.add_argument('--results_dir', default='/mnt/ssd/glamr_egobody_test')
+parser.add_argument('--results_dir', default='./out/egobody_test_prohmr')
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--init_type', default='prohmr')  # hybrik/prohmr
 # parser.add_argument('--seeds', default="1")
@@ -27,7 +27,7 @@ args = parser.parse_args()
 
 results_dir = args.results_dir
 
-egobody_test_clip_names = pkl.load(open('../egobody_test_data/egobody_test_clip_names.pkl', 'rb'))
+egobody_test_clip_names = pkl.load(open('./egobody_test_data/egobody_test_clip_names.pkl', 'rb'))
 sequences = list(egobody_test_clip_names.keys())
 
 # sequences = ['recording_20220225_S24_S25_01_clip_01']
@@ -55,7 +55,8 @@ for sind, seq_name in enumerate(sequences):
     # evaluator.log.info(f'{sind}/{len(sequences)} evaluating global reconstruction for {seq_name}')
 
     pred_data_file = f'{results_dir}/{args.init_type}/{seq_name}/grecon/{seq_name}_seed1.pkl'
-    gt_data_file = '../egobody_test_data/egobody_test_gt/{}.pkl'.format(seq_name)
+    #pred_data_file = f'{results_dir}/{seq_name}/grecon/{seq_name}_seed1.pkl'
+    gt_data_file = './egobody_test_data/egobody_test_gt/{}.pkl'.format(seq_name)
     pred_data = pickle.load(open(pred_data_file, 'rb'))
     gt_pose_dict = pickle.load(open(gt_data_file, 'rb'))
 

@@ -20,13 +20,13 @@ from pose_est.run_pose_est_demo import run_pose_est_on_video
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--cfg', default='glamr_dynamic')  # glamr_dynamic
-parser.add_argument('--est_type', default='hybrik')  # hybrik/prohmr
+parser.add_argument('--est_type', default='prohmr')  # hybrik/prohmr
 # parser.add_argument('--video_path', default='/local/home/szhang/MOJO-cap-multiperson/downtown_enterShop_00.mp4')   # ../assets/dynamic/running.mp4
 # parser.add_argument('--out_dir', default='../out/glamr_dynamic/downtown_enterShop_00')  # glamr_dynamic/running
-parser.add_argument('--video_path', default='recording_20210907_S03_S04_01_clip_01.mp4')
+parser.add_argument('--seq_name', default='recording_20210907_S03_S04_01_clip_01')
 # parser.add_argument('--out_dir', default='/mnt/ssd/glamr_egobody_test/hybrik/recording_20210907_S03_S04_01_clip_01')
-parser.add_argument('--out_dir', default='./out/egobody_test_prohmr/recording_20210911_S03_S08_01_clip_01')
-parser.add_argument('--pose_est_dir', default='./out/egobody_test/recording_20210911_S03_S08_01_clip_01/pose_est')
+parser.add_argument('--out_dir', default='./out/egobody_test_prohmr/prohmr')
+parser.add_argument('--pose_est_dir', default='./out/egobody_test')
 parser.add_argument('--seed', type=int, default=1)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--cached', type=int, default=0)
@@ -39,10 +39,9 @@ args = parser.parse_args()
 
 
 egobody_video_root = '/local/home/szhang/GLAMR-main/egobody_test_data/egobody_test_videos'
-video_path = os.path.join(egobody_video_root, args.video_path)
-# video_path = args.video_path
-
-
+video_path = os.path.join(egobody_video_root, f"{args.seq_name}.mp4")
+args.out_dir = f"{args.out_dir}/{seq_name}"
+args.pose_est_dir = f"{args.pose_est_dir}/{args.seq_name}/pose_est"
 
 
 cached = int(args.cached)
@@ -72,6 +71,7 @@ if args.est_type == 'hybrik':
     else:
         pose_est_dir = args.pose_est_dir
     pose_est_model_name = {'hybrik': 'HybrIK'}[cfg.grecon_model_specs['est_type']]
+    
 elif args.est_type == 'prohmr':
     assert("_prohmr" in args.out_dir)
     pose_est_dir = f'{args.out_dir}/pose_est'

@@ -59,6 +59,7 @@ parser.add_argument('--out_dir', default='out/3dpw')
 parser.add_argument('--seeds', default="1")
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--cached', type=int, default=1)
+parser.add_argument('--save_video', action='store_true', default=True)
 args = parser.parse_args()
 
 
@@ -130,4 +131,25 @@ for i, seq_name in enumerate(sequences[:]):
         # global optimization
         out_dict = grecon_model.optimize(in_dict)
         pickle.dump(out_dict, open(out_file, 'wb'))
+
+        # save video
+        if args.save_video:
+            render_specs = seq_render_specs.get(seq_name, seq_render_specs['default'])
+            video_world = f'{render_path}/{seq_name}_seed{seed}_world.mp4'
+            video_cam = f'{render_path}/{seq_name}_seed{seed}_cam.mp4'
+            video_sbs = f'{render_path}/{seq_name}_seed{seed}_sbs_all.mp4'
+
+            log.info(f'saving world animation for {seq_name}')
+            visualizer = GReconVisualizer(out_dict, coord='world', verbose=False, show_camera=False,
+                                        render_cam_pos=render_specs.get('cam_pos', None), render_cam_focus=render_specs.get('cam_focus', None))
+            #J: gives not divisible by 2 error in H36M, visualizer.save_animation_as_video(video_world, window_size=render_specs.get('wsize', (int(1.5 * img_h), img_h)), cleanup=True, crf=5)
+            visualizer.save_animation_as_video(video_world, window_size=render_specs.get('wsize', (img_w, img_h)), cleanup=True, crf=5)
+
+            log.info(f'saving cam animation for {seq_name}')
+            visualizer = GReconVisualizer(out_dict, coord='cam_in_world', verbose=False, background_img_dir=frame_dir)
+            visualizer.save_animation_as_video(video_cam, window_size=(img_w, img_h), cleanup=True)
+
+            log.info(f'saving side-by-side animation for {seq_name}')
+            hstack_video_arr([pose_est_video, video_cam, video_world], video_sbs, text_arr=[pose_est_model_name, 'GLAMR (Cam)', 'GLAMR (World)'], text_color='blue', text_size=img_h // 16, verbose=False)
+
 

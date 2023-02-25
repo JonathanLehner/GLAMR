@@ -118,7 +118,7 @@ def compute_std(data):
         jpos = pose_dict['eval_joints_world'][:,0:1,:]        
         std_err = torch.std(jpos)
         num_data += jpos.shape[0]
-    std_err /= num_data
+    std_err /= num_data # J: not sure if necessary to divide by sequence length
     info = {'num_data': num_data}
     return std_err.item(), info
 

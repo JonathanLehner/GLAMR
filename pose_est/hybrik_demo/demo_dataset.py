@@ -130,7 +130,7 @@ idx = 0   # current not supporting multiple person in this demo
 
 frame_idx = 0
     
-usingGTfocal_length = True
+usingGTfocal_length = False
 if(usingGTfocal_length):
     gt_dict = pickle.load(open(opt.dataset_path, 'rb'))
     print("gt camera intrinsics", gt_dict["meta"]["cam_K"])
@@ -235,6 +235,7 @@ for idx, pose_dict in out_dict.items():
     pose_dict['frame2ind'] = {f: i for i, f in enumerate(pose_dict['frames'])}
     pose_dict['bboxes_dict'] = mot_bboxes[idx]
 
+# J: not sure why this is needed
 new_dict = dict()
 for k, v in out_dict.items():
     new_dict[k] = dict()
@@ -250,3 +251,4 @@ images_to_video(f'{opt.out_dir}/res_images', f'{opt.out_dir}/render.mp4', img_fm
 
 shutil.rmtree(f'{opt.out_dir}/res_images')
 # shutil.rmtree(f'{opt.out_dir}/res_2d_images')
+
