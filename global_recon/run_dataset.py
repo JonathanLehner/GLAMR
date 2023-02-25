@@ -137,6 +137,7 @@ for i, seq_name in enumerate(sequences[:]):
         if args.save_video:
             pose_est_video = f'{seq_out_dir}/pose_est/render.mp4'
             img_w, img_h = get_video_width_height(pose_est_video)
+            frame_dir = seq_image_dir
 
             render_specs = seq_render_specs.get(seq_name, seq_render_specs['default'])
             video_world = f'{render_path}/{seq_name}_seed{seed}_world.mp4'
