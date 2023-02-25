@@ -193,6 +193,9 @@ class GlobalReconOptimizer:
                 if self.flag_opt_traj_latent:
                     pose_dict['traj_latent'] = self.mt_model.get_traj_latent(seq_len=pose_dict['exist_len']).to(self.device)
                 self.infer_motion_traj(pose_dict)
+                print(pose_dict.keys())
+                print("xxx")
+            exit()
         
         if not (self.flag_infer_motion_traj and self.flag_pred_traj):
             for pose_dict in person_data.values():
@@ -401,7 +404,9 @@ class GlobalReconOptimizer:
                 batch['in_motion_latent'] = pose_dict['motion_latent']
             if self.flag_opt_traj_latent:
                 batch['in_traj_latent'] = pose_dict['traj_latent']
-            output = self.mt_model.inference(batch, sample_num=1)
+
+            #print("pose prev", batch['in_body_pose'])
+            output = self.mt_model.inference(batch, sample_num=1) #J: recon is by default false
 
             if self.flag_infill_motion:
                 pose_dict['infilled'] = True
@@ -413,6 +418,9 @@ class GlobalReconOptimizer:
                     pose_dict['smpl_joint_pos'][exist_fr] = output['infer_out_joint_pos'][0, 0]
                     if 'smpl_pose' in pose_dict:
                         del pose_dict['smpl_pose']
+                #print("J: infilled local poses", pose_dict['smpl_pose'])
+                #exit()
+                # confirmed that motion infiller does not change visible poses
 
             if self.flag_pred_traj:
                 pose_dict['traj_predicted'] = True
@@ -479,10 +487,11 @@ class GlobalReconOptimizer:
                         heading = torch.cumsum(d_heading, dim=0)
                         pose_dict['traj_local_pred'][..., -2:] = heading_to_vec(heading)
 
-
             """ predict trajectory """
             if self.flag_infer_motion_traj and self.flag_pred_traj:
                 self.get_pred_trajectory_base(pose_dict, opt_variables)
+                #print(pose_dict['traj_local_pred'].shape)
+                #exit()
 
             if self.flag_opt_traj:
                 if 'world_res' in opt_variables:
@@ -515,6 +524,9 @@ class GlobalReconOptimizer:
                     data['cam_pose'] = make_transform(data['cam_rot_6d'], data['cam_trans'], rot_type='6d')
                     data['cam_pose_inv'] = inverse_transform(data['cam_pose'])
             elif self.flag_opt_cam_from_person_pose:
+                print("self.flag_opt_cam_from_person_pose")
+                print("J: does not optimise relative camera position for 3DPW")
+                #exit()
                 cam_pose_inv_new = []
                 for pose_dict in data['person_data'].values(): 
                     person2cam = pose_dict['person2cam']
@@ -617,6 +629,8 @@ class GlobalReconOptimizer:
 
             self.optimize_main(data, opt_variables, opt_lr, opt_niters, loss_cfg, opt_meta)
 
+            print(stage_specs.get('reinitialize_cam', False))
+            exit()
             if stage_specs.get('reinitialize_cam', False):
                 data['cam_pose'][:] = data['cam_pose'][[0]]
                 data['cam_pose_inv'] = inverse_transform(data['cam_pose'])
