@@ -29,7 +29,10 @@ parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--seed', type=int, default=1)
 parser.add_argument('--version', type=int, default=None)
 parser.add_argument('--cp', default='best')
+parser.add_argument('--noise_amount', type=float, default=0.01)
+parser.add_argument('--no_vis', type=bool, default=True)
 args = parser.parse_args()
+args.no_vis = False
 
 cfg = Config(args.cfg, training=False)
 seed_everything(args.seed, workers=False)
@@ -70,59 +73,66 @@ for i, batch in enumerate(test_dataloader):
     batch = tensor_to(batch, device)
     seq_name = batch["seq_name"][0]
 
-    try: #J: make sure we already generated sequences
-        mojoResults = torch.load(f'../MOJO-cap/results/{seq_name}.pt')
-        for key in mojoResults.keys():
-            mojoResults[key] = mojoResults[key].float().cuda()
+    if(args.no_vis == False): # J: we check here first so we don't need to do inference if file for visualisation is missing
+        try: #J: make sure we already generated sequences
+            mojoResults = torch.load(f'../MOJO-cap/results/{seq_name}_{args.noise_amount}_10.pt')
+            print('loaded ')
+            for key in mojoResults.keys():
+                mojoResults[key] = mojoResults[key].float().cuda()
 
-    except Exception as e:
-        print(e)
-        continue
+        except Exception as e:
+            print(e)
+            continue
 
+    # J: compute noisy body feature
+    batch['pose'][0,:,3:] = (batch['pose'][0,:,3:] + torch.randn(batch['pose'][0,:,3:].shape).cuda()*args.noise_amount).contiguous()
+    #print(batch['pose'].shape)
+    #exit()
     output = traj_predictor.inference(batch, sample_num=args.num_motion_samp, recon=True, multi_step=args.multi_step)
     
     # J: need to save for evaluation
-    torch.save(output, f'out/vis_traj_pred/{seq_name}.pt')
+    torch.save(output, f'out/vis_traj_pred/{seq_name}_{args.noise_amount}.pt')
 
-    # betas are always 0 in the visualiser
-    mojoResults['shape'] = output['shape']
-    mojoResults['frame_mask'] = output['frame_mask']
-    mojoResults['seq_name'] = output['seq_name']
+    if(args.no_vis == False):
+        # betas are always 0 in the visualiser
+        mojoResults['shape'] = output['shape']
+        mojoResults['frame_mask'] = output['frame_mask']
+        mojoResults['seq_name'] = output['seq_name']
 
-    prefix = 'multistep_' if args.multi_step else 'singlestep_'
-    vid_name = f'out/vis_traj_pred/{cfg.id}/v{version}_{cp_name}/{args.split}/{prefix}seq_len_{seq_len}/sd{args.seed}_s{i}__{seq_name}_%s.mp4'
+        prefix = 'multistep_' if args.multi_step else 'singlestep_'
+        vid_name = f'out/vis_traj_pred/{cfg.id}/v{version}_{cp_name}/{args.split}/{prefix}seq_len_{seq_len}/sd{args.seed}_s{i}__{seq_name}_%s.mp4'
 
-    # save MOJO-cap
-    visualizer.save_animation_as_video(
-        vid_name % 'MOJO-cap', init_args={'smpl_seq': mojoResults, 'mode': 'sample'}, window_size=(1500, 1500), cleanup=True
-    )
+        # save MOJO-cap
+        visualizer.save_animation_as_video(
+            vid_name % 'MOJO-cap', init_args={'smpl_seq': mojoResults, 'mode': 'sample'}, window_size=(1500, 1500), cleanup=True
+        )
 
-    # save GT
-    visualizer.save_animation_as_video(
-        vid_name % 'gt', init_args={'smpl_seq': output, 'mode': 'gt'}, window_size=(1500, 1500), cleanup=True
-    )
+        # save GT
+        visualizer.save_animation_as_video(
+            vid_name % 'gt', init_args={'smpl_seq': output, 'mode': 'gt'}, window_size=(1500, 1500), cleanup=True
+        )
 
-    # save sample
-    visualizer.save_animation_as_video(
-        vid_name % 'GLAMR-sample', init_args={'smpl_seq': output, 'mode': 'sample'}, window_size=(1500, 1500), cleanup=True
-    )
+        # save sample
+        visualizer.save_animation_as_video(
+            vid_name % 'GLAMR-sample', init_args={'smpl_seq': output, 'mode': 'sample'}, window_size=(1500, 1500), cleanup=True
+        )
 
-    #hstack_videos(vid_name % 'recon', vid_name % 'gt', vid_name % 'sbs', verbose=False, text1='Recon', text2='GT', text_color='black')
-    hstack_3videos(vid_name % 'GLAMR-sample', vid_name % 'gt', vid_name % 'MOJO-cap', vid_name % 'combined', verbose=False, text1='GLAMR', text2='GT', text3='MOJO-cap', text_color='black')
+        #hstack_videos(vid_name % 'recon', vid_name % 'gt', vid_name % 'sbs', verbose=False, text1='Recon', text2='GT', text_color='black')
+        hstack_3videos(vid_name % 'GLAMR-sample', vid_name % 'gt', vid_name % 'MOJO-cap', vid_name % 'combined', verbose=False, text1='GLAMR', text2='GT', text3='MOJO-cap', text_color='black')
 
-    if False: # J: currently not needed
-        if traj_predictor.stochastic:
-            # save sample
-            visualizer.save_animation_as_video(
-                vid_name % 'sample', init_args={'smpl_seq': output, 'mode': 'sample'}, window_size=(1500, 1500), cleanup=True
-            )
-            #hstack_videos(vid_name % 'sample', vid_name % 'gt', vid_name % 'sample_sbs', verbose=False, text1='Sample', text2='GT', text_color='black')
-            hstack_3videos(vid_name % 'GLAMR', vid_name % 'gt', vid_name % 'MOJO-cap', vid_name % 'combined', verbose=False, text1='Sample', text2='GT', text_color='black')
-            os.remove(vid_name % 'sample')
+        if False: # J: currently not needed
+            if traj_predictor.stochastic:
+                # save sample
+                visualizer.save_animation_as_video(
+                    vid_name % 'sample', init_args={'smpl_seq': output, 'mode': 'sample'}, window_size=(1500, 1500), cleanup=True
+                )
+                #hstack_videos(vid_name % 'sample', vid_name % 'gt', vid_name % 'sample_sbs', verbose=False, text1='Sample', text2='GT', text_color='black')
+                hstack_3videos(vid_name % 'GLAMR', vid_name % 'gt', vid_name % 'MOJO-cap', vid_name % 'combined', verbose=False, text1='Sample', text2='GT', text_color='black')
+                os.remove(vid_name % 'sample')
 
-    os.remove(vid_name % 'gt')
-    os.remove(vid_name % 'GLAMR-sample')
-    os.remove(vid_name % 'MOJO-cap')
+        os.remove(vid_name % 'gt')
+        os.remove(vid_name % 'GLAMR-sample')
+        os.remove(vid_name % 'MOJO-cap')
     
     
 

@@ -31,6 +31,14 @@ models = ["MOJO"]
 test_dataset = AMASSDataset('../GLAMR/datasets/amass_processed/v1', 'test', None, training=False, seq_len=800, ntime_per_epoch=int(2e6))
 test_dataloader = DataLoader(test_dataset, shuffle=False, batch_size=1, num_workers=0, pin_memory=True, worker_init_fn=worker_init_fn)
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--noise_amount', default=0.02)
+parser.add_argument('--num_frames', default=10)
+parser.add_argument('--model', default="GLAMR")
+args = parser.parse_args()
+
+models = [args.model]
+
 for model in models:
 
     print(f"evaluating {model}")
@@ -45,9 +53,11 @@ for model in models:
 
         try: #J: make sure we already generated sequences
             if(model == "GLAMR"):
-                results = torch.load(f'out/vis_traj_pred/{seq_name}.pt')
+                results = torch.load(f'out/vis_traj_pred/{seq_name}_{args.noise_amount}.pt')
             else:
-                results = torch.load(f'../MOJO-cap/results/{seq_name}.pt')
+                res_path = f'../MOJO-cap/results/{seq_name}_{args.noise_amount}_{args.num_frames}.pt'
+                #print(res_path)
+                results = torch.load(res_path)
                 for key in results.keys():
                     results[key] = results[key].float().cuda()
         except Exception as e:

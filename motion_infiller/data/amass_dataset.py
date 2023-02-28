@@ -27,7 +27,8 @@ class AMASSDataset(Dataset):
             self.seq_prob = None
 
     def __len__(self):
-       return self.ntime_per_epoch // self.seq_len
+        return len(self.sequences)
+        return self.ntime_per_epoch // self.seq_len
 
     def set_seq_len(self, seq_len):
         self.seq_len = seq_len        
@@ -39,8 +40,11 @@ class AMASSDataset(Dataset):
             np.random.seed(self.epoch_init_seed)
             # print('epoch_init_seed', self.epoch_init_seed)
         
-        sind = np.random.choice(len(self.sequences), p=self.seq_prob)
-        seq = self.sequences[sind]
+        if(True):
+            seq = self.sequences[idx]
+        else:
+            sind = np.random.choice(len(self.sequences), p=self.seq_prob)
+            seq = self.sequences[sind]
         seq_jpos, seq_jpos_noshape = self.data_jpos[seq]
 
         if self.seq_len <= self.data[seq].shape[0]:

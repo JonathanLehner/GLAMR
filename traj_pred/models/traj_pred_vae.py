@@ -383,7 +383,7 @@ class TrajPredVAE(pl.LightningModule):
 
     def get_joint_pos(self, body_pose):
         assert not self.in_joint_pos_only
-        pose = body_pose.view(-1, 69)
+        pose = body_pose.reshape((-1, 69))
         joints = self.smpl.get_joints(
             global_orient=torch.zeros_like(pose[:, :3]),
             body_pose=pose,
