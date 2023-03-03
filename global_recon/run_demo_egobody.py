@@ -40,7 +40,7 @@ args = parser.parse_args()
 
 egobody_video_root = '/local/home/szhang/GLAMR-main/egobody_test_data/egobody_test_videos'
 video_path = os.path.join(egobody_video_root, f"{args.seq_name}.mp4")
-args.out_dir = f"{args.out_dir}/{seq_name}"
+args.out_dir = f"{args.out_dir}/{args.seq_name}"
 args.pose_est_dir = f"{args.pose_est_dir}/{args.seq_name}/pose_est"
 
 
@@ -116,18 +116,6 @@ if (args.vis and args.vis_cam) or args.save_video:
     if len(glob.glob(f'{frame_dir}/*.jpg')) != out_dict['meta']['num_fr']:
         log.info(f'generating frames from {video_path}...')
         video_to_images(video_path, frame_dir, fps=30, verbose=False)
-
-# # visualization
-# if args.vis:
-#     render_specs = seq_render_specs.get(seq_name, dict())
-#     if args.vis_cam:
-#         visualizer = GReconVisualizer(out_dict, coord='cam_in_world', verbose=False, background_img_dir=frame_dir)
-#         visualizer.show_animation(window_size=(img_w, img_h), show_axes=False)
-#     else:
-#         render_specs = seq_render_specs.get(seq_name, seq_render_specs['default'])
-#         visualizer = GReconVisualizer(out_dict, coord='world', verbose=False, show_camera=True,
-#                                       render_cam_pos=render_specs.get('cam_pos', None), render_cam_focus=render_specs.get('cam_focus', None))
-#         visualizer.show_animation(window_size=(1920, 1080))
 
 # save video
 if args.save_video:

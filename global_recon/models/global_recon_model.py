@@ -193,9 +193,6 @@ class GlobalReconOptimizer:
                 if self.flag_opt_traj_latent:
                     pose_dict['traj_latent'] = self.mt_model.get_traj_latent(seq_len=pose_dict['exist_len']).to(self.device)
                 self.infer_motion_traj(pose_dict)
-                print(pose_dict.keys())
-                print("xxx")
-            exit()
         
         if not (self.flag_infer_motion_traj and self.flag_pred_traj):
             for pose_dict in person_data.values():
@@ -629,8 +626,6 @@ class GlobalReconOptimizer:
 
             self.optimize_main(data, opt_variables, opt_lr, opt_niters, loss_cfg, opt_meta)
 
-            print(stage_specs.get('reinitialize_cam', False))
-            exit()
             if stage_specs.get('reinitialize_cam', False):
                 data['cam_pose'][:] = data['cam_pose'][[0]]
                 data['cam_pose_inv'] = inverse_transform(data['cam_pose'])

@@ -32,7 +32,7 @@ parser.add_argument('--cp', default='best')
 parser.add_argument('--noise_amount', type=float, default=0.01)
 parser.add_argument('--no_vis', type=bool, default=True)
 args = parser.parse_args()
-args.no_vis = False
+#args.no_vis = False # J: why does not work true without this
 
 cfg = Config(args.cfg, training=False)
 seed_everything(args.seed, workers=False)

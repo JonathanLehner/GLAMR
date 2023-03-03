@@ -86,14 +86,6 @@ for model in models:
         data = {}
         data["seq_len"] = 800
         data["gt"] = {0: batch}
-        data_file = f'{results_dir}/{seq_name}.pt'
-
-        #print(batch['smpl_pose'].shape)
-
-        try:
-            data_all_ours = torch.load(open(data_file, 'rb'))
-        except:
-            continue
 
         for seed in seeds:
 
